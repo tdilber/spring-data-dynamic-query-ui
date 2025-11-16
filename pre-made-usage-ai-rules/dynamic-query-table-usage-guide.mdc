@@ -1,0 +1,928 @@
+# Spring Dynamic Query UI - Usage Guide
+
+This guide explains how to use the Dynamic Query Table component in a project where it's already installed.
+
+## Quick Start
+
+Import and use the `DynamicQueryTable` component in your page:
+
+```typescript
+"use client";
+
+import { DynamicQueryTable } from "@/components/dynamic-query-table";
+import { Field } from "@/lib/types/field.types";
+
+export default function MyPage() {
+  const fields: Field[] = [
+    {
+      name: "id",
+      title: "ID",
+      type: "Integer",
+      visible: true,
+      sortable: true,
+    },
+    {
+      name: "name",
+      title: "Name",
+      type: "String",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      editable: true,
+    },
+  ];
+
+  return (
+    <DynamicQueryTable
+      fields={fields}
+      apiUrl="/api/your-endpoint"
+      enableFilter={true}
+      pageSize={20}
+    />
+  );
+}
+```
+
+## Component Props
+
+### DynamicQueryTable Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `fields` | `Field[]` | required | Array of field definitions |
+| `apiUrl` | `string` | required | Backend API endpoint URL |
+| `idField` | `string` | `"id"` | Primary key field name |
+| `defaultSortField` | `string` | `"id"` | Default field to sort by |
+| `pageSize` | `number` | `20` | Number of rows per page |
+| `enableFilter` | `boolean` | `true` | Show filter panel |
+| `enableSelection` | `boolean` | `false` | Enable row selection checkboxes |
+| `enableCreate` | `boolean` | `false` | Show create button |
+| `enableEdit` | `boolean` | `false` | Show edit button for rows |
+| `onRowSelect` | `(rows: T[]) => void` | optional | Callback when rows are selected |
+| `onDataChange` | `(data: SpringPage<T>) => void` | optional | Callback when data changes |
+
+## Field Configuration
+
+### Base Field Properties
+
+All field types support these properties:
+
+```typescript
+{
+  name: string;              // Required: Field identifier
+  title: string;             // Required: Display label
+  type: FieldType;           // Required: Field type
+  visible?: boolean;         // Show column (default: true)
+  filterable?: boolean;      // Enable filter (default: false)
+  sortable?: boolean;        // Enable sort (default: false)
+  showInDetail?: boolean;    // Show in detail view (default: false)
+  editable?: boolean;        // Allow editing (default: false)
+  accessor?: string;         // Custom accessor path for nested data
+  placeholder?: string;      // Input placeholder
+  defaultValue?: any;        // Default value for new records
+  renderCell?: Function;     // Custom cell renderer
+  renderEdit?: Function;     // Custom edit renderer
+}
+```
+
+### Field Types
+
+#### 1. String Field
+
+```typescript
+{
+  name: "username",
+  title: "Username",
+  type: "String",
+  visible: true,
+  filterable: true,
+  sortable: true,
+  showInDetail: true,
+  editable: true,
+  placeholder: "Enter username..."
+}
+```
+
+**Filter Operation**: CONTAIN
+**Display**: Plain text
+**Edit**: Text input
+
+#### 2. Integer Field
+
+```typescript
+{
+  name: "age",
+  title: "Age",
+  type: "Integer",
+  visible: true,
+  filterable: true,
+  sortable: true,
+  editable: true
+}
+```
+
+**Filter Operation**: EQUAL
+**Display**: Number
+**Edit**: Number input
+
+#### 3. Boolean Field
+
+```typescript
+{
+  name: "isActive",
+  title: "Active",
+  type: "Boolean",
+  visible: true,
+  filterable: true,
+  sortable: true,
+  showInDetail: true,
+  editable: true
+}
+```
+
+**Filter Operation**: SPECIFIED
+**Display**: Badge (Yes/No)
+**Edit**: Checkbox
+
+#### 4. Enum Field
+
+```typescript
+{
+  name: "status",
+  title: "Status",
+  type: "Enum",
+  enumValues: {
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "ARCHIVED": "Archived"
+  },
+  visible: true,
+  filterable: true,
+  sortable: true,
+  showInDetail: true,
+  editable: true,
+  multiSelect: true
+}
+```
+
+**Filter Operation**: EQUAL (multiple values)
+**Display**: Human-readable label from enumValues
+**Edit**: Dropdown select
+
+#### 5. Date Field
+
+```typescript
+{
+  name: "birthDate",
+  title: "Birth Date",
+  type: "Date",
+  visible: true,
+  filterable: true,
+  sortable: true,
+  showInDetail: true,
+  editable: true
+}
+```
+
+**Filter Operation**: Range (GREATER_THAN_OR_EQUAL + LESS_THAN_OR_EQUAL)
+**Display**: Formatted date (PPp format)
+**Edit**: Calendar picker
+
+#### 6. DateSec Field (Unix Timestamp in Seconds)
+
+```typescript
+{
+  name: "createdAt",
+  title: "Created At",
+  type: "DateSec",
+  visible: true,
+  filterable: true,
+  sortable: true,
+  showInDetail: true,
+  editable: false
+}
+```
+
+**Filter Operation**: Range (GREATER_THAN_OR_EQUAL + LESS_THAN_OR_EQUAL)
+**Display**: Formatted date (PPp format)
+**Edit**: Calendar picker (converts to Unix timestamp)
+
+#### 7. DateTimeSec Field (Unix Timestamp in Seconds with Time)
+
+```typescript
+{
+  name: "lastLogin",
+  title: "Last Login",
+  type: "DateTimeSec",
+  visible: true,
+  filterable: true,
+  sortable: true,
+  showInDetail: true,
+  editable: true
+}
+```
+
+**Filter Operation**: Range (GREATER_THAN_OR_EQUAL + LESS_THAN_OR_EQUAL)
+**Display**: Formatted date and time (PPp format)
+**Edit**: Calendar picker (converts to Unix timestamp)
+
+#### 8. Image Field
+
+```typescript
+{
+  name: "profileImage",
+  title: "Profile Image",
+  type: "Image",
+  uploadConfig: "profile-images",
+  maxSize: 5242880,
+  allowedTypes: ["image/jpeg", "image/png", "image/webp"],
+  visible: true,
+  showInDetail: true,
+  editable: true
+}
+```
+
+**Filter Operation**: Not typically filterable
+**Display**: Thumbnail image (10x10)
+**Edit**: File upload input with preview
+
+#### 9. RichText Field
+
+```typescript
+{
+  name: "description",
+  title: "Description",
+  type: "RichText",
+  visible: false,
+  filterable: false,
+  showInDetail: true,
+  editable: true,
+  placeholder: "Enter description..."
+}
+```
+
+**Filter Operation**: CONTAIN (on plain text)
+**Display**: Truncated plain text (first 50 chars)
+**Edit**: Textarea input
+
+## Custom Renderers
+
+### Custom Cell Renderer
+
+Customize how a field is displayed in the table:
+
+```typescript
+{
+  name: "price",
+  title: "Price",
+  type: "Integer",
+  visible: true,
+  renderCell: (value, row) => {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="font-bold">${value}</span>
+        {row.discount > 0 && (
+          <span className="text-xs text-red-500">-{row.discount}%</span>
+        )}
+      </div>
+    );
+  }
+}
+```
+
+### Custom Edit Renderer
+
+Customize the edit input for a field:
+
+```typescript
+{
+  name: "category",
+  title: "Category",
+  type: "String",
+  editable: true,
+  renderEdit: (value, onChange) => {
+    return (
+      <div className="space-y-2">
+        <input
+          type="text"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-2 border rounded"
+        />
+        <div className="text-xs text-muted-foreground">
+          Enter category name (e.g., Electronics, Clothing)
+        </div>
+      </div>
+    );
+  }
+}
+```
+
+## Nested Fields
+
+Use the `accessor` property to access nested object properties:
+
+```typescript
+{
+  name: "user.email",
+  title: "User Email",
+  type: "String",
+  accessor: "user.email",
+  visible: true,
+  filterable: true,
+  sortable: true
+}
+```
+
+This will access `row.user.email` from your data.
+
+## Event Handlers
+
+### Row Selection Handler
+
+```typescript
+<DynamicQueryTable
+  fields={fields}
+  apiUrl="/api/users"
+  enableSelection={true}
+  onRowSelect={(selectedRows) => {
+    console.log("Selected rows:", selectedRows);
+    console.log("Total selected:", selectedRows.length);
+  }}
+/>
+```
+
+### Data Change Handler
+
+```typescript
+<DynamicQueryTable
+  fields={fields}
+  apiUrl="/api/users"
+  onDataChange={(data) => {
+    console.log("Total elements:", data.totalElements);
+    console.log("Current page:", data.number);
+    console.log("Page content:", data.content);
+  }}
+/>
+```
+
+## Spring Backend Integration
+
+### Expected API Response Format
+
+Your backend must return data in Spring Page format:
+
+```json
+{
+  "content": [
+    {"id": 1, "name": "John", "age": 30},
+    {"id": 2, "name": "Jane", "age": 25}
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 20,
+    "sort": {
+      "sorted": true,
+      "unsorted": false,
+      "empty": false
+    },
+    "offset": 0,
+    "paged": true,
+    "unpaged": false
+  },
+  "totalPages": 5,
+  "totalElements": 100,
+  "last": false,
+  "size": 20,
+  "number": 0,
+  "sort": {
+    "sorted": true,
+    "unsorted": false,
+    "empty": false
+  },
+  "numberOfElements": 20,
+  "first": true,
+  "empty": false
+}
+```
+
+### URL Query Parameters
+
+The component generates Spring Dynamic Query compatible URL parameters:
+
+**Basic Query:**
+```
+?page=0&pageSize=20&orderBy0=id&orderByDirection0=desc
+```
+
+**With Filters:**
+```
+?key0=name&operation0=CONTAIN&values0=john&key1=age&operation1=EQUAL&values1=25&page=0&pageSize=20&orderBy0=id&orderByDirection0=desc
+```
+
+**Multiple Values (Enum):**
+```
+?key0=status&operation0=EQUAL&values0=ACTIVE&values0=PENDING&page=0&pageSize=20
+```
+
+**Date Range:**
+```
+?key0=createdAt&operation0=GREATER_THAN_OR_EQUAL&values0=1640995200&key1=createdAt&operation1=LESS_THAN_OR_EQUAL&values1=1672531199&page=0&pageSize=20
+```
+
+### Criteria Operations
+
+The component uses these operations that match Spring's CriteriaOperation enum:
+
+- `CONTAIN` - String contains value (case-insensitive)
+- `DOES_NOT_CONTAIN` - String does not contain value
+- `END_WITH` - String ends with value
+- `START_WITH` - String starts with value
+- `SPECIFIED` - Field has a value (not null)
+- `EQUAL` - Exact match
+- `NOT_EQUAL` - Not equal
+- `GREATER_THAN` - Greater than
+- `GREATER_THAN_OR_EQUAL` - Greater than or equal
+- `LESS_THAN` - Less than
+- `LESS_THAN_OR_EQUAL` - Less than or equal
+
+## Complete Examples
+
+### Example 1: Simple User Table
+
+```typescript
+"use client";
+
+import { DynamicQueryTable } from "@/components/dynamic-query-table";
+import { Field } from "@/lib/types/field.types";
+
+export default function UsersPage() {
+  const fields: Field[] = [
+    {
+      name: "id",
+      title: "ID",
+      type: "Integer",
+      visible: true,
+      sortable: true,
+      showInDetail: true,
+    },
+    {
+      name: "username",
+      title: "Username",
+      type: "String",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+      editable: true,
+    },
+    {
+      name: "email",
+      title: "Email",
+      type: "String",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+      editable: true,
+    },
+    {
+      name: "active",
+      title: "Active",
+      type: "Boolean",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+      editable: true,
+    },
+    {
+      name: "createdAt",
+      title: "Created At",
+      type: "DateTimeSec",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+    },
+  ];
+
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Users</h1>
+      <DynamicQueryTable
+        fields={fields}
+        apiUrl="/api/users"
+        enableFilter={true}
+        enableSelection={true}
+        enableEdit={true}
+        pageSize={20}
+        defaultSortField="createdAt"
+      />
+    </div>
+  );
+}
+```
+
+### Example 2: Product Catalog with Custom Renderers
+
+```typescript
+"use client";
+
+import { DynamicQueryTable } from "@/components/dynamic-query-table";
+import { Field } from "@/lib/types/field.types";
+import { Badge } from "@/components/ui/badge";
+
+export default function ProductsPage() {
+  const fields: Field[] = [
+    {
+      name: "id",
+      title: "ID",
+      type: "Integer",
+      visible: true,
+      sortable: true,
+    },
+    {
+      name: "name",
+      title: "Product Name",
+      type: "String",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+      editable: true,
+    },
+    {
+      name: "price",
+      title: "Price",
+      type: "Integer",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+      editable: true,
+      renderCell: (value) => (
+        <span className="font-semibold text-green-600">
+          ${(value / 100).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      name: "category",
+      title: "Category",
+      type: "Enum",
+      enumValues: {
+        "electronics": "Electronics",
+        "clothing": "Clothing",
+        "food": "Food & Beverages",
+        "books": "Books",
+        "toys": "Toys & Games"
+      },
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+      editable: true,
+    },
+    {
+      name: "stock",
+      title: "Stock",
+      type: "Integer",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+      editable: true,
+      renderCell: (value) => {
+        const color = value === 0 ? "destructive" : value < 10 ? "secondary" : "default";
+        return <Badge variant={color}>{value}</Badge>;
+      },
+    },
+    {
+      name: "image",
+      title: "Image",
+      type: "Image",
+      uploadConfig: "products",
+      visible: true,
+      showInDetail: true,
+      editable: true,
+    },
+    {
+      name: "description",
+      title: "Description",
+      type: "RichText",
+      visible: false,
+      showInDetail: true,
+      editable: true,
+    },
+  ];
+
+  return (
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Product Catalog</h1>
+      </div>
+      <DynamicQueryTable
+        fields={fields}
+        apiUrl="/api/products"
+        enableFilter={true}
+        enableSelection={true}
+        enableCreate={true}
+        enableEdit={true}
+        pageSize={20}
+        defaultSortField="name"
+        onRowSelect={(rows) => {
+          console.log(`${rows.length} products selected`);
+        }}
+      />
+    </div>
+  );
+}
+```
+
+### Example 3: Orders with Nested Fields
+
+```typescript
+"use client";
+
+import { DynamicQueryTable } from "@/components/dynamic-query-table";
+import { Field } from "@/lib/types/field.types";
+
+export default function OrdersPage() {
+  const fields: Field[] = [
+    {
+      name: "id",
+      title: "Order ID",
+      type: "Integer",
+      visible: true,
+      sortable: true,
+      showInDetail: true,
+    },
+    {
+      name: "orderNumber",
+      title: "Order Number",
+      type: "String",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+    },
+    {
+      name: "customer.name",
+      title: "Customer Name",
+      type: "String",
+      accessor: "customer.name",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+    },
+    {
+      name: "customer.email",
+      title: "Customer Email",
+      type: "String",
+      accessor: "customer.email",
+      visible: true,
+      filterable: true,
+      showInDetail: true,
+    },
+    {
+      name: "totalAmount",
+      title: "Total",
+      type: "Integer",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+      renderCell: (value) => `$${(value / 100).toFixed(2)}`,
+    },
+    {
+      name: "status",
+      title: "Status",
+      type: "Enum",
+      enumValues: {
+        "PENDING": "Pending",
+        "PROCESSING": "Processing",
+        "SHIPPED": "Shipped",
+        "DELIVERED": "Delivered",
+        "CANCELLED": "Cancelled"
+      },
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+      editable: true,
+    },
+    {
+      name: "orderDate",
+      title: "Order Date",
+      type: "DateTimeSec",
+      visible: true,
+      filterable: true,
+      sortable: true,
+      showInDetail: true,
+    },
+  ];
+
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Orders</h1>
+      <DynamicQueryTable
+        fields={fields}
+        apiUrl="/api/orders"
+        enableFilter={true}
+        enableSelection={true}
+        enableEdit={true}
+        pageSize={20}
+        defaultSortField="orderDate"
+      />
+    </div>
+  );
+}
+```
+
+## Advanced Features
+
+### URL Synchronization
+
+All filters, sorting, and pagination are automatically synced with the URL. This means:
+
+- Users can bookmark specific filtered views
+- URL can be shared with others
+- Browser back/forward buttons work as expected
+- Page state persists on refresh
+
+Example URL:
+```
+/orders?key0=status&operation0=EQUAL&values0=SHIPPED&page=2&pageSize=20&orderBy0=orderDate&orderByDirection0=desc
+```
+
+### Filter Panel
+
+The filter panel supports:
+
+- **Collapsible**: Click to expand/collapse
+- **Pin**: Pin the panel to keep it always open (state saved in localStorage)
+- **Active Count**: Shows number of active filters as a badge
+- **Type-specific inputs**: Different input types based on field type
+
+### Column Visibility Toggle
+
+Users can show/hide columns using the settings button:
+
+- Toggle individual columns
+- Show all / Hide all buttons
+- State persists during session
+
+### Pagination
+
+Features:
+- Configurable page sizes (10, 20, 50, 100)
+- Smart page number display with ellipsis
+- Previous/Next navigation
+- Shows item range (e.g., "Showing 1 to 20 of 100 results")
+
+### Detail View
+
+Click the eye icon to view full record details:
+
+- Shows all fields where `showInDetail` is true
+- Type-specific rendering (images, rich text, dates, etc.)
+- Click images to open in new tab
+
+### Create/Edit Forms
+
+When enabled, forms provide:
+
+- Auto-generated inputs based on field types
+- Modified field tracking (asterisk indicator)
+- Rollback changes button
+- Validation (basic type validation)
+- Custom renderers via `renderEdit`
+
+## Styling
+
+The component uses Tailwind CSS and shadcn/ui. You can customize:
+
+### Theme Colors
+
+Modify `app/globals.css` to change colors:
+
+```css
+:root {
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  /* ... other colors */
+}
+```
+
+### Component Styling
+
+All components accept standard className props and use the `cn` utility for merging classes.
+
+## TypeScript Support
+
+Full type safety with generics:
+
+```typescript
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+const fields: Field[] = [...];
+
+<DynamicQueryTable<User>
+  fields={fields}
+  apiUrl="/api/users"
+  onRowSelect={(rows: User[]) => {
+    // rows is typed as User[]
+  }}
+  onDataChange={(data: SpringPage<User>) => {
+    // data.content is typed as User[]
+  }}
+/>
+```
+
+## Best Practices
+
+1. **Field Configuration**
+   - Only make fields filterable if they're commonly searched
+   - Keep the number of visible columns reasonable (5-8 ideal)
+   - Use `showInDetail` for less important fields
+
+2. **Performance**
+   - Use appropriate page sizes (20-50 recommended)
+   - Implement server-side filtering and sorting
+   - Consider lazy loading for images
+
+3. **User Experience**
+   - Provide meaningful field titles
+   - Use placeholders for inputs
+   - Set reasonable default sort fields
+   - Use custom renderers for better data visualization
+
+4. **API Design**
+   - Return consistent Spring Page format
+   - Implement proper error handling
+   - Support all required criteria operations
+   - Validate and sanitize filter inputs
+
+5. **Data Types**
+   - Use DateSec/DateTimeSec for Unix timestamps
+   - Store prices in cents (integers)
+   - Use Enum for predefined value sets
+   - Keep nested object access shallow (1-2 levels)
+
+## Troubleshooting
+
+### Filters not working
+- Verify backend supports the criteria operations
+- Check browser console for API errors
+- Ensure field names match backend properties
+
+### Sorting not working
+- Verify backend handles orderBy and orderByDirection parameters
+- Check that field accessor matches backend property path
+
+### Data not loading
+- Verify API endpoint returns Spring Page format
+- Check browser network tab for response structure
+- Ensure CORS is properly configured
+
+### Custom renderers not showing
+- Verify renderCell/renderEdit functions return valid React nodes
+- Check for errors in browser console
+- Ensure functions are not async (use useEffect for async operations)
+
+## Migration from Legacy System
+
+If migrating from a previous dynamic query system:
+
+1. Update field property names:
+   - `isShow` → `visible`
+   - `isUsingFilter` → `filterable`
+   - `isUsingSort` → `sortable`
+   - `isShowOnDetailPage` → `showInDetail`
+   - `isUpdatable` → `editable`
+
+2. Update type names to match new system
+
+3. Update custom renderer signatures
+
+4. Test all filters and ensure operations match new format
+
+## Summary
+
+The Dynamic Query Table component provides a complete solution for displaying and manipulating Spring backend data with:
+
+- Type-safe field definitions
+- Automatic URL synchronization
+- Flexible filtering and sorting
+- Full CRUD support
+- Custom rendering capabilities
+- Spring Dynamic Query compatibility
+
+For more examples and advanced usage, refer to the implementation in `app/example/page.tsx`.
